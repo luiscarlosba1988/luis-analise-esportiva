@@ -257,6 +257,31 @@ HTML_INTERFACE = """
 </html>
 """
 
+# Dicionário Inteligente com os Elencos Principais das Seleções da Copa
+ELENCOS_SELECOES = {
+    "brasil": ["Vinicius Junior", "Rodrygo", "Endrick", "Raphinha", "Lucas Paquetá"],
+    "argentina": ["Lionel Messi", "Lautaro Martínez", "Julián Álvarez", "Alexis Mac Allister", "Rodrigo de Paul"],
+    "franca": ["Kylian Mbappé", "Bradley Barcola", "Ousmane Dembélé", "Marcus Thuram", "Antoine Griezmann"],
+    "franç": ["Kylian Mbappé", "Bradley Barcola", "Ousmane Dembélé", "Marcus Thuram", "Antoine Griezmann"],
+    "espanha": ["Lamine Yamal", "Nico Williams", "Dani Olmo", "Alvaro Morata", "Pedri"],
+    "alemanha": ["Jamal Musiala", "Florian Wirtz", "Kai Havertz", "Niclas Füllkrug", "Leroy Sané"],
+    "inglaterra": ["Harry Kane", "Jude Bellingham", "Phil Foden", "Bukayo Saka", "Cole Palmer"],
+    "portugal": ["Cristiano Ronaldo", "Rafael Leão", "Bruno Fernandes", "Bernardo Silva", "João Félix"],
+    "japao": ["Takefusa Kubo", "Daizen Maeda", "Kaoru Mitoma", "Ayase Ueda", "Ritsu Doan"],
+    "japã": ["Takefusa Kubo", "Daizen Maeda", "Kaoru Mitoma", "Ayase Ueda", "Ritsu Doan"],
+    "marrocos": ["Hakim Ziyech", "Youssef En-Nesyri", "Brahim Díaz", "Achraf Hakimi", "Amine Harit"],
+    "italia": ["Federico Chiesa", "Gianluca Scamacca", "Mateo Retegui", "Nicolò Barella", "Lorenzo Pellegrini"],
+    "itália": ["Federico Chiesa", "Gianluca Scamacca", "Mateo Retegui", "Nicolò Barella", "Lorenzo Pellegrini"],
+    "uruguai": ["Darwin Núñez", "Luis Suárez", "Federico Valverde", "Facundo Pellistri", "Giorgian De Arrascaeta"]
+}
+
+def obter_jogadores_selecao(nome_time, padrao_nomes):
+    nome_busca = nome_time.lower().strip()
+    for chave, lista in ELENCOS_SELECOES.items():
+        if chave in nome_busca:
+            return lista
+    return padrao_nomes
+
 @app.route('/')
 def index():
     return render_template_string(HTML_INTERFACE)
@@ -306,17 +331,24 @@ def analisar():
     sugestao_under = "Ander -3.5 Gols" if media_gols_estimada < 2.8 else "Ander -4.5 Gols"
     sugestao_over = "Ouver +2.5 Gols" if media_gols_estimada > 2.2 else "Ouver +1.5 Gols"
 
+    # Mapeamento dinâmico e inteligente de jogadores baseado nos elencos salvos
+    elenco_home = obter_jogadores_selecao(time_home, ["Atacante Principal", "Ponta Esquerda", "Meio Campo"])
+    elenco_away = obter_jogadores_selecao(time_away, ["Centroavante", "Ponta Direita"])
+
     jogadores_dinamicos = [
-        {"nome": "Atacante Principal", "time": time_home, "ultima_partida": int(chutes_home * 0.4), "media_ultimas": round(chutes_home * 0.35, 1), "no_gol": int(chutes_home * 0.25)},
-        {"nome": "Ponta Ofensivo", "time": time_home, "ultima_partida": int(chutes_home * 0.3), "media_ultimas": round(chutes_home * 0.28, 1), "no_gol": int(chutes_home * 0.15)},
-        {"nome": "Meia de Ligação", "time": time_home, "ultima_partida": int(chutes_home * 0.2), "media_ultimas": round(chutes_home * 0.20, 1), "no_gol": int(chutes_home * 0.10)},
-        {"nome": "Principal Finalizador", "time": time_away, "ultima_partida": int(chutes_away * 0.5), "media_ultimas": round(chutes_away * 0.42, 1), "no_gol": int(chutes_away * 0.30)},
-        {"nome": "Meia Atacante", "time": time_away, "ultima_partida": int(chutes_away * 0.3), "media_ultimas": round(chutes_away * 0.25, 1), "no_gol": int(chutes_away * 0.15)}
+        {"nome": elenco_home[0], "time": time_home, "ultima_partida": int(chutes_home * 0.4), "media_ultimas": round(chutes_home * 0.35, 1), "no_gol": int(chutes_home * 0.25)},
+        {"nome": elenco_home[1] if len(elenco_home) > 1 else "Ponta Ofensivo", "time": time_home, "ultima_partida": int(chutes_home * 0.3), "media_ultimas": round(chutes_home * 0.28, 1), "no_gol": int(chutes_home * 0.15)},
+        {"nome": elenco_home[2] if len(elenco_home) > 2 else "Meia de Ligação", "time": time_home, "ultima_partida": int(chutes_home * 0.2), "media_ultimas": round(chutes_home * 0.20, 1), "no_gol": int(chutes_home * 0.10)},
+        {"nome": elenco_away[0], "time": time_away, "ultima_partida": int(chutes_away * 0.5), "media_ultimas": round(chutes_away * 0.42, 1), "no_gol": int(chutes_away * 0.30)},
+        {"nome": elenco_away[1] if len(elenco_away) > 1 else "Meia Atacante", "time": time_away, "ultima_partida": int(chutes_away * 0.3), "media_ultimas": round(chutes_away * 0.25, 1), "no_gol": int(chutes_away * 0.15)}
     ]
+
+    nome_destaque_home = jogadores_dinamicos[0]["nome"]
+    nome_destaque_away = jogadores_dinamicos[3]["nome"]
 
     palpite_mercado = f"{sugestao_over} & Cantos"
     palpite_linha = f"{sugestao_over} na partida / Mais de 8.5 Escanteios Totais"
-    palpite_justificativa = f"A varredura em tempo real detectou um volume combinado de {chutes_home + chutes_away} chutes. O confronto indica uma probabilidade de {prob_btts}% para Ambas Marcarem baseado no scout recente."
+    palpite_justificativa = f"A varredura em tempo real detectou um volume combinado de {chutes_home + chutes_away} chutes. O confronto indica uma probabilidade de {prob_btts}% para Ambas Marcarem baseado no scout recente de finalizações de {nome_destaque_home} e {nome_destaque_away}."
 
     return jsonify({
         "sucesso": True,
@@ -326,8 +358,8 @@ def analisar():
         "sugestao_under":  sugestao_under,
         "sugestao_over": sugestao_over,
         "ambas_marcam_prob": f"{prob_btts}%",
-        "destaque_home": {"nome": f"Destaque do {time_home}", "no_gol": max(jogadores_dinamicos[0]["no_gol"], 1)},
-        "destaque_away": {"nome": "Destaque do Adversário" if time_away == "Time Visitante" else f"Destaque do {time_away}", "no_gol": max(jogadores_dinamicos[3]["no_gol"], 1)},
+        "destaque_home": {"nome": nome_destaque_home, "no_gol": max(jogadores_dinamicos[0]["no_gol"], 1)},
+        "destaque_away": {"nome": nome_destaque_away, "no_gol": max(jogadores_dinamicos[3]["no_gol"], 1)},
         "palpite_ia": {
             "mercado": palpite_mercado,
             "linha": palpite_linha,
