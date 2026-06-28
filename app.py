@@ -6,12 +6,10 @@ import os
 import sys
 
 base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-# CONFIGURAÇÃO DE SEGURANÇA: Procura o HTML tanto na pasta raiz quanto em templates
 app = Flask(__name__, template_folder=base_dir)
 
 @app.route('/')
 def index():
-    # Tenta carregar da raiz; se falhar, tenta da subpasta
     try:
         return render_template('index.html')
     except Exception:
@@ -56,7 +54,7 @@ def analisar():
             chutes_away = min(max(int(num_encontrados[5]) % 18, 5), 14)
             
     except Exception as e:
-        print(f"Aviso de varredura: {e}.")
+        print(f"Aviso: {e}")
 
     media_gols_estimada = (chutes_home + chutes_away) * 0.12
     prob_btts = min(max(int((chutes_home * 5) + (chutes_away * 4)), 40), 88)
@@ -74,8 +72,6 @@ def analisar():
 
     nome_destaque_home = f"Destaque do {time_home}"
     nome_destaque_away = f"Destaque do {time_away}"
-    chutes_destaque_home = jogadores_dinamicos[0]["no_gol"]
-    chutes_destaque_away = jogadores_dinamicos[3]["no_gol"]
 
     palpite_mercado = f"{sugestao_over} & Cantos"
     palpite_linha = f"{sugestao_over} na partida / Mais de 8.5 Escanteios Totais"
@@ -86,11 +82,11 @@ def analisar():
         "partida": "Copa do Mundo 2026 - Análise Dinâmica Web",
         "home": {"nome": time_home, "escanteios": escanteios_home, "cartoes": cartoes_home, "chutes": chutes_home},
         "away": {"nome": "Adversário" if time_away == "Time Visitante" else time_away, "escanteios": escanteios_away, "cartoes": cartoes_away, "chutes": chutes_away},
-        "sugestao_under": congestao_under := sugestao_under,
+        "sugestao_under":  sugestao_under,
         "sugestao_over": sugestao_over,
         "ambas_marcam_prob": f"{prob_btts}%",
-        "destaque_home": {"nome": nome_destaque_home, "no_gol": max(chutes_destaque_home, 1)},
-        "destaque_away": {"nome": "Destaque do Adversário" if time_away == "Time Visitante" else nome_destaque_away, "no_gol": max(chutes_destaque_away, 1)},
+        "destaque_home": {"nome": nome_destaque_home, "no_gol": max(jogadores_dinamicos[0]["no_gol"], 1)},
+        "destaque_away": {"nome": "Destaque do Adversário" if time_away == "Time Visitante" else nome_destaque_away, "no_gol": max(jogadores_dinamicos[3]["no_gol"], 1)},
         "palpite_ia": {
             "mercado": palpite_mercado,
             "linha": palpite_linha,
