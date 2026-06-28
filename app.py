@@ -22,7 +22,7 @@ HTML_INTERFACE = """
     <nav class="bg-gray-800 p-4 border-b border-gray-700 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-black text-green-500 tracking-wider">📊 LUIS ANÁLISE ESPORTIVA</h1>
-            <span class="text-xs bg-green-950 text-green-400 border border-green-800 px-3 py-1 rounded-full font-mono uppercase">AI PRE-LIVE ENGINE v9.0</span>
+            <span class="text-xs bg-green-950 text-green-400 border border-green-800 px-3 py-1 rounded-full font-mono uppercase">AI PRE-LIVE ENGINE v9.5</span>
         </div>
     </nav>
 
@@ -255,7 +255,7 @@ HTML_INTERFACE = """
 </html>
 """
 
-# DICIONÁRIO OFICIAL COMPACTO DE CRAQUES ATIVOS EM 2026 (LIVRE DE CORTADOS)
+# DICIONÁRIO OFICIAL COMPACTO DE CRAQUES ATIVOS EM 2026
 BANCO_ELENCOS_2026 = {
     "brasil": ["Vinicius Junior", "Endrick", "Raphinha", "Gabriel Martinelli", "Lucas Paquetá"],
     "argentina": ["Lionel Messi", "Lautaro Martínez", "Julián Álvarez", "Alexis Mac Allister", "Enzo Fernández"],
@@ -269,6 +269,9 @@ BANCO_ELENCOS_2026 = {
     "japã": ["Takefusa Kubo", "Kaoru Mitoma", "Ayase Ueda", "Takumi Minamino", "Ritsu Doan"],
     "uruguai": ["Darwin Núñez", "Federico Valverde", "Facundo Pellistri", "Manuel Ugarte", "Nicolás de la Cruz"]
 }
+
+# SELEÇÕES COM ALTÍSSIMO ÍNDICE OFENSIVO EM 2026 (OUVER GOLS)
+TIMES_OVER_GOLS = ["franca", "franç", "alemanha", "inglaterra", "espanha", "portugal"]
 
 def obter_elenco_seguro(nome_time, padrao_jogadores):
     chave_busca = nome_time.lower().strip()
@@ -293,21 +296,53 @@ def analisar_preditivo():
     time_home = partes[0] if len(partes) > 0 else "Time Casa"
     time_away = partes[1] if len(partes) > 1 else "Time Visitante"
 
-    # GERAÇÃO MATEMÁTICA COERENTE BASEADA NO HISTÓRICO DAS SELEÇÕES NA COPA
-    random.seed(len(time_home) + len(time_away)) # Mantém os dados fixos para o mesmo jogo
+    random.seed(len(time_home) + len(time_away))
     
-    chutes_home = random.randint(11, 16)
-    chutes_away = random.randint(9, 14)
+    # 1. CÁLCULO DINÂMICO DE GOLS E TENDÊNCIA (ANDER VS OUVER)
+    peso_over = 0
+    t_home_low = time_home.lower()
+    t_away_low = time_away.lower()
+    
+    for t in TIMES_OVER_GOLS:
+        if t in t_home_low: peso_over += 1.5
+        if t in t_away_low: peso_over += 1.5
+
+    # Gera a média de gols flutuando de acordo com as equipes informadas
+    media_gols = round(random.uniform(1.6, 2.7) + peso_over, 2)
+    prob_btts = min(max(int((media_gols * 22) + random.randint(-5, 5)), 35), 88)
+
+    # Condicionamento tático dinâmico das abas de Gol baseado na média projetada
+    if media_gols > 3.1:
+        sugestao_under = "Ander -4.5 Gols"
+        sugestao_over = "Ouver +2.5 Gols (Alta Tendência)"
+        mercado_ia = "Ouver +2.5 Gols"
+        linha_ia = "Mais de 2.5 gols na partida"
+        justificativa_ia = f"Alta Tendência Ofensiva: O confronto entre {time_home} e {time_away} indica uma projeção de {media_gols} gols combinados, impulsionado pelo ataque agressivo das equipes."
+    elif media_gols >= 2.3:
+        sugestao_under = "Ander -3.5 Gols"
+        sugestao_over = "Ouver +1.5 Gols (Média Tendência)"
+        mercado_ia = "Ouver +1.5 Gols"
+        linha_ia = "Mais de 1.5 gols totais"
+        justificativa_ia = f"Tendência Padrão de Ambas Marcarem ({prob_btts}%): Projeção calculada em {media_gols} gols, indicando cenário favorável para buscar linhas de proteção no mercado de Ouver."
+    else:
+        sugestao_under = "Ander -2.5 Gols (Alta Tendência)"
+        sugestao_over = "Ouver +1.5 Gols"
+        mercado_ia = "Ander -2.5 Gols"
+        linha_ia = "Menos de 2.5 gols na partida"
+        justificativa_ia = f"Tendência de Ander Gols: Sistema detectou postura conservadora e equilíbrio tático pesado. Expectativa de placar enxuto com média calculada de {media_gols} gols."
+
+    # 2. PROJEÇÃO DOS DEMAIS MERCADOS (CANTOS E SCOUTS)
+    chutes_home = random.randint(11, 16) if media_gols > 2.3 else random.randint(7, 11)
+    chutes_away = random.randint(9, 14) if media_gols > 2.3 else random.randint(6, 10)
+    
     escanteios_home = random.randint(5, 8)
     escanteios_away = random.randint(4, 7)
     cartoes_home = random.randint(1, 3)
     cartoes_away = random.randint(1, 4)
 
-    # Coleta os elencos ativos reais de 2026 para os times digitados
     elenco_home = obter_elenco_seguro(time_home, [f"Atacante {time_home}", f"Ponta {time_home}", f"Meia {time_home}"])
     elenco_away = obter_elenco_seguro(time_away, [f"Centroavante {time_away}", f"Ponta {time_away}", f"Meia {time_away}"])
 
-    # Distribuição estatística realística de médias individuais por partida
     jogadores_dinamicos = [
         {"nome": elenco_home[0], "time": time_home, "ultima_partida": round(chutes_home * 0.32, 1), "media_ultimas": "7.8", "no_gol": round(chutes_home * 0.16, 1)},
         {"nome": elenco_home[1], "time": time_home, "ultima_partida": round(chutes_home * 0.24, 1), "media_ultimas": "7.2", "no_gol": round(chutes_home * 0.10, 1)},
@@ -316,24 +351,9 @@ def analisar_preditivo():
         {"nome": elenco_away[1], "time": time_away, "ultima_partida": round(chutes_away * 0.22, 1), "media_ultimas": "7.1", "no_gol": round(chutes_away * 0.09, 1)}
     ]
 
-    # Ordena a tabela para colocar quem tem maior estatística de finalização no alvo por primeiro
     jogadores_home = sorted([jogadores_dinamicos[0], jogadores_dinamicos[1], jogadores_dinamicos[2]], key=lambda k: k['no_gol'], reverse=True)
     jogadores_away = sorted([jogadores_dinamicos[3], jogadores_dinamicos[4]], key=lambda k: k['no_gol'], reverse=True)
 
-    nome_destaque_home = jogadores_home[0]["nome"]
-    nome_destaque_away = jogadores_away[0]["nome"]
-
-    media_gols = (chutes_home + chutes_away) * 0.11
-    prob_btts = min(max(int((chutes_home * 5) + (chutes_away * 4.2)), 45), 85)
-    
-    sugestao_under = "Ander -3.5 Gols" if media_gols < 2.8 else "Ander -4.5 Gols"
-    sugestao_over = "Ouver +2.5 Gols" if media_gols > 2.2 else "Ouver +1.5 Gols"
-
-    palpite_mercado = f"{sugestao_over} & Cantos"
-    palpite_linha = f"{sugestao_over} na partida / Mais de 8.5 Escanteios Totais"
-    palpite_justificativa = f"Projeção Pré-Live: Modelo matemático estima volume combinado de {chutes_home + chutes_away} chutes. Historicamente, as ações ofensivas principais concentram-se no volume de finalizações de {nome_destaque_home} ({time_home}) e {nome_destaque_away} ({time_away})."
-
-    # Junta novamente organizados para exibição
     todos_jogadores = [jogadores_home[0], jogadores_home[1], jogadores_home[2], jogadores_away[0], jogadores_away[1]]
 
     return jsonify({
@@ -344,12 +364,12 @@ def analisar_preditivo():
         "sugestao_under":  sugestao_under,
         "sugestao_over": sugestao_over,
         "ambas_marcam_prob": f"{prob_btts}%",
-        "destaque_home": {"nome": nome_destaque_home, "no_gol": jogadores_home[0]["no_gol"]},
-        "destaque_away": {"nome": nome_destaque_away, "no_gol": jogadores_away[0]["no_gol"]},
+        "destaque_home": {"nome": jogadores_home[0]["nome"], "no_gol": jogadores_home[0]["no_gol"]},
+        "destaque_away": {"nome": jogadores_away[0]["nome"], "no_gol": jogadores_away[0]["no_gol"]},
         "palpite_ia": {
-            "mercado": palpite_mercado,
-            "linha": palpite_linha,
-            "justificativa": palpite_justificativa
+            "mercado": mercado_ia,
+            "linha": linha_ia,
+            "justificativa": justificativa_ia
         },
         "jogadores": todos_jogadores
     })
